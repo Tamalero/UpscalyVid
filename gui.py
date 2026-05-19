@@ -450,6 +450,13 @@ class MainWindow(QMainWindow):
             lambda: QDesktopServices.openUrl(QUrl("https://openmodeldb.info"))
         )
 
+        act_open_models_dir = about_menu.addAction("Open Models Folder")
+        act_open_models_dir.setStatusTip(str(MODELS_DIR))
+        act_open_models_dir.triggered.connect(
+            lambda: (MODELS_DIR.mkdir(parents=True, exist_ok=True),
+                     QDesktopServices.openUrl(QUrl.fromLocalFile(str(MODELS_DIR))))
+        )
+
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)

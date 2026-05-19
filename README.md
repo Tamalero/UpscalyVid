@@ -20,11 +20,11 @@ AI-powered video upscaler using Real-ESRGAN and HAT (Hybrid Attention Transforme
 
 ### Option 1 — AppImage (easiest)
 
-Download `UpscalyVid-v1.0.1-x86_64.AppImage` from the [latest release](https://github.com/Tamalero/UpscalyVid/releases/latest):
+Download `UpscalyVid-v1.0.4-x86_64.AppImage` from the [latest release](https://github.com/Tamalero/UpscalyVid/releases/latest):
 
 ```bash
-chmod +x UpscalyVid-v1.0.1-x86_64.AppImage
-./UpscalyVid-v1.0.1-x86_64.AppImage
+chmod +x UpscalyVid-v1.0.4-x86_64.AppImage
+./UpscalyVid-v1.0.4-x86_64.AppImage
 ```
 
 First launch automatically sets up a Python venv. GPU acceleration requires a system CUDA + PyTorch installation.
@@ -121,12 +121,13 @@ Options:
 | Preview | Live frame preview updated every 5 seconds during upscaling |
 | Pre-download | Downloads all registered model weights up front |
 | Log | Full output log panel |
+| About menu | Links to GitHub project, OpenModelDB, and opens the models folder |
 
 ---
 
 ## Supported models
 
-Models are downloaded automatically to `models/` on first use.
+Models are downloaded automatically on first use. When running from the AppImage they are stored in `~/.local/share/UpscalyVid/models/`. Use **About → Open Models Folder** to open that directory directly.
 
 | Key | Arch | Scale | Best for |
 |---|---|---|---|
