@@ -78,7 +78,12 @@ class _TeeLogger:
 # Model registry
 # ---------------------------------------------------------------------------
 
-MODELS_DIR = Path(__file__).parent / "models"
+# When running from an AppImage the filesystem is read-only, so UPSCALYVID_MODELS_DIR
+# points to a writable directory in ~/.local/share/UpscalyVid/models.
+import os as _os
+MODELS_DIR = Path(_os.environ.get("UPSCALYVID_MODELS_DIR",
+                                   Path(__file__).parent / "models"))
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 MODELS = {
     # ── RRDBNet family (high quality, heavier) ────────────────────────────────
