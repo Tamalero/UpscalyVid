@@ -55,8 +55,12 @@ def _save_config(cfg: dict) -> None:
 # SVG arrow icons — Qt doesn't render CSS border-triangle tricks
 # ---------------------------------------------------------------------------
 
-_ICONS_DIR = Path(__file__).parent / "icons"
-_ICONS_DIR.mkdir(exist_ok=True)
+# When running from an AppImage the squashfs is read-only; UPSCALYVID_DATA_DIR
+# is set by AppRun to ~/.local/share/UpscalyVid, which is writable.
+import os as _os
+_DATA_DIR  = Path(_os.environ.get("UPSCALYVID_DATA_DIR", Path(__file__).parent))
+_ICONS_DIR = _DATA_DIR / "icons"
+_ICONS_DIR.mkdir(parents=True, exist_ok=True)
 _ARROW_DOWN = _ICONS_DIR / "arrow_down.svg"
 _ARROW_UP   = _ICONS_DIR / "arrow_up.svg"
 _ARROW_DOWN.write_text(
@@ -1038,12 +1042,16 @@ def _ensure_desktop_file():
     if dst.exists():
         return
     dst.parent.mkdir(parents=True, exist_ok=True)
+    # When running from an AppImage, $APPIMAGE points to the .AppImage file itself
+    # (a stable path). Inside a plain source install, fall back to python + gui.py.
+    appimage = _os.environ.get("APPIMAGE")
+    exec_line = appimage if appimage else f"{sys.executable} {Path(__file__).resolve()}"
     dst.write_text(
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=UpscalyVid\n"
         "Comment=AI Video Upscaler powered by Real-ESRGAN\n"
-        f"Exec={sys.executable} {Path(__file__).resolve()}\n"
+        f"Exec={exec_line}\n"
         "Icon=video-x-generic\n"
         "Terminal=false\n"
         "Categories=Video;Graphics;AudioVideo;\n"

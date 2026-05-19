@@ -126,9 +126,9 @@ if [ "$HAS_CUDA" = "False" ]; then
 fi
 
 # ── Run the app ───────────────────────────────────────────────────────────────
-# Point models dir to writable location inside DATA_DIR
+# Redirect all writable paths out of the read-only squashfs mount
+export UPSCALYVID_DATA_DIR="$DATA_DIR"
 export UPSCALYVID_MODELS_DIR="$MODELS_DIR"
-export UPSCALYVID_APP_DIR="$APP_CODE"
 
 exec "$VENV_PYTHON" "$APP_CODE/gui.py" "$@"
 APPRUN
