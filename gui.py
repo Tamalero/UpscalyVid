@@ -9,12 +9,12 @@ import tempfile
 from pathlib import Path
 
 from PIL import Image
-from PyQt6.QtCore import QProcess, Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QImage, QPalette, QPixmap
+from PyQt6.QtCore import QProcess, Qt, QThread, QTimer, QUrl, pyqtSignal
+from PyQt6.QtGui import QColor, QDesktopServices, QFont, QImage, QPalette, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QFileDialog, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox,
-    QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy,
+    QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QMenuBar,
+    QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy,
     QSpinBox, QStatusBar, QToolButton, QVBoxLayout, QWidget,
 )
 
@@ -226,6 +226,37 @@ QToolButton {{
     border-radius: 6px; padding: 6px 10px; color: {TEXT};
 }}
 QToolButton:hover {{ background-color: {BORDER}; }}
+QMenuBar {{
+    background-color: {DARK_BG};
+    color: {TEXT};
+    border-bottom: 1px solid {BORDER};
+    padding: 2px 4px;
+}}
+QMenuBar::item {{
+    padding: 4px 14px;
+    border-radius: 4px;
+    color: {TEXT_DIM};
+}}
+QMenuBar::item:selected {{ background-color: {SURFACE2}; color: {TEXT}; }}
+QMenuBar::item:pressed  {{ background-color: {ACCENT};   color: #ffffff; }}
+QMenu {{
+    background-color: {SURFACE};
+    border: 1px solid {BORDER};
+    border-radius: 6px;
+    padding: 4px;
+    color: {TEXT};
+}}
+QMenu::item {{
+    padding: 7px 28px 7px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+}}
+QMenu::item:selected {{ background-color: {ACCENT}; color: #ffffff; }}
+QMenu::separator {{
+    height: 1px;
+    background: {BORDER};
+    margin: 4px 8px;
+}}
 """
 
 # CRF / CQ scale hint shown beneath the quality spinbox
@@ -397,6 +428,23 @@ class MainWindow(QMainWindow):
         self._preview_timer = QTimer(self)
         self._preview_timer.setInterval(5000)
         self._preview_timer.timeout.connect(self._refresh_preview)
+
+        # ── menu bar ─────────────────────────────────────────────────────────
+        about_menu = self.menuBar().addMenu("About")
+
+        act_github = about_menu.addAction("GitHub Project")
+        act_github.setStatusTip("Open the UpscalyVid GitHub repository")
+        act_github.triggered.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/Tamalero/UpscalyVid"))
+        )
+
+        about_menu.addSeparator()
+
+        act_models = about_menu.addAction("Find Models  (OpenModelDB)")
+        act_models.setStatusTip("Browse community AI upscaling models at openmodeldb.info")
+        act_models.triggered.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://openmodeldb.info"))
+        )
 
         central = QWidget()
         self.setCentralWidget(central)
