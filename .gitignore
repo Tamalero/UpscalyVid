@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Models (large binary weights — downloaded on demand)
+models/*.pth
+models/*.tmp
+
+# AppImage build artifacts
+*.AppImage
+*.AppImage.zsync
+AppDir/
+
+# Temp / runtime
+upscalyvid_*.log
+source_frame.png
+sample_frame.png
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db

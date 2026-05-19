@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e1e2e"/>
+      <stop offset="100%" stop-color="#2d2d42"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c6af7"/>
+      <stop offset="100%" stop-color="#9b8cf9"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded rectangle -->
+  <rect width="256" height="256" rx="40" ry="40" fill="url(#bg)"/>
+  <!-- Film strip left -->
+  <rect x="28" y="60" width="18" height="136" rx="4" fill="#3d3d5c"/>
+  <rect x="30" y="72"  width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="30" y="98"  width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="30" y="124" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="30" y="150" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="30" y="170" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <!-- Film strip right -->
+  <rect x="210" y="60" width="18" height="136" rx="4" fill="#3d3d5c"/>
+  <rect x="212" y="72"  width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="212" y="98"  width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="212" y="124" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="212" y="150" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <rect x="212" y="170" width="14" height="14" rx="2" fill="#1e1e2e"/>
+  <!-- Center upscale arrow (up-right) -->
+  <g transform="translate(128,128)">
+    <!-- Arrow shaft -->
+    <line x1="-32" y1="32" x2="32" y2="-32" stroke="url(#accent)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Arrowhead -->
+    <polygon points="20,-44 44,-20 44,-44" fill="url(#accent)"/>
+    <!-- Small origin dot -->
+    <circle cx="-32" cy="32" r="8" fill="#7c6af7" opacity="0.6"/>
+  </g>
+  <!-- Stars / sparkles (quality) -->
+  <circle cx="80"  cy="88"  r="4" fill="#cdd6f4" opacity="0.5"/>
+  <circle cx="176" cy="168" r="4" fill="#cdd6f4" opacity="0.5"/>
+  <circle cx="170" cy="86"  r="3" fill="#cdd6f4" opacity="0.4"/>
+  <circle cx="86"  cy="170" r="3" fill="#cdd6f4" opacity="0.4"/>
+</svg>

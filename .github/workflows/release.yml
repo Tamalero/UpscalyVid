@@ -1,0 +1,79 @@
+name: Release AppImage
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            zsync \
+            fuse \
+            libfuse2 \
+            squashfs-tools \
+            rsvg-convert \
+            librsvg2-bin
+
+      - name: Download appimagetool
+        run: |
+          wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" \
+            -O /usr/local/bin/appimagetool
+          chmod +x /usr/local/bin/appimagetool
+
+      - name: Convert icon
+        run: |
+          rsvg-convert -w 256 -h 256 upscalyvid.svg -o upscalyvid.png
+
+      - name: Build AppImage
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          chmod +x build-appimage.sh
+          APPIMAGE_EXTRACT_AND_RUN=1 bash build-appimage.sh "$VERSION"
+        env:
+          ARCH: x86_64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "UpscalyVid ${{ github.ref_name }}"
+          body: |
+            ## UpscalyVid ${{ github.ref_name }}
+
+            ### Installation
+            1. Download `UpscalyVid-${{ github.ref_name }}-x86_64.AppImage`
+            2. Make it executable: `chmod +x UpscalyVid-*.AppImage`
+            3. Run it: `./UpscalyVid-*.AppImage`
+
+            On first launch the AppImage will set up a Python venv automatically.
+            A CUDA-capable GPU with system PyTorch is strongly recommended for real-time performance.
+
+            ### Auto-update
+            Install [AppImageUpdate](https://github.com/AppImageCommunity/AppImageUpdate) and run:
+            ```
+            AppImageUpdate UpscalyVid-*.AppImage
+            ```
+            Or use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) for seamless desktop integration and background update checks.
+
+            ### Requirements
+            - Linux x86_64
+            - Python 3.10+
+            - For GPU acceleration: NVIDIA GPU + CUDA + PyTorch (system-installed)
+            - ffmpeg (for video processing)
+          files: |
+            UpscalyVid-*-x86_64.AppImage
+            UpscalyVid-*-x86_64.AppImage.zsync
+            UpscalyVid-*-x86_64.AppImage.sha256
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'alpha') }}
