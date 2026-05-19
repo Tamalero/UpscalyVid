@@ -2,18 +2,26 @@
 
 AI-powered video upscaler inspired by [Upscayl](https://github.com/upscayl/upscayl). Uses Real-ESRGAN and HAT models via a self-contained PyTorch implementation (no basicsr/opencv dependency). Includes a PyQt6 GUI and a CLI.
 
+## GitHub repository
+
+**URL**: https://github.com/Tamalero/UpscalyVid  
+Releases include AppImage + .zsync + .sha256. CI workflow at `.github/workflows/release.yml` builds and publishes automatically on `v*` tag push.
+
 ## Project layout
 
 ```
 UpscalyVid/
-├── upscalyvid.py      # CLI + all AI logic (self-contained)
-├── gui.py             # PyQt6 GUI frontend
-├── launch.fish        # Fish launcher — auto-creates venv and starts GUI
-├── setup.sh           # Bash env checker + optional model pre-download
-├── requirements.txt   # Minimal: torch, numpy, Pillow
-├── models/            # Downloaded .pth weights (auto-created, gitignore)
-├── icons/             # SVG arrow icons written at GUI startup
-└── .venv/             # Local venv (auto-created by launch.fish)
+├── upscalyvid.py              # CLI + all AI logic (self-contained)
+├── gui.py                     # PyQt6 GUI frontend
+├── launch.fish                # Fish launcher — auto-creates venv and starts GUI
+├── setup.sh                   # Bash env checker + optional model pre-download
+├── requirements.txt           # Minimal: torch, numpy, Pillow
+├── build-appimage.sh          # Builds AppImage Type 2 + zsync + sha256
+├── upscalyvid.svg / .png      # App icon (SVG source + 256×256 PNG)
+├── .github/workflows/         # GitHub Actions: release.yml builds AppImage on v* tag
+├── models/                    # Downloaded .pth weights (auto-created, gitignore)
+├── icons/                     # SVG arrow icons written at GUI startup
+└── .venv/                     # Local venv (auto-created by launch.fish)
 ```
 
 ## How to run
@@ -268,6 +276,8 @@ Named button object IDs used in QSS: `primary`, `cancel`, `lossless`, `reset`.
 
 ```
 upscalyvid.py [input] [output] [options]
+upscalyvid.py /path/to/folder/           # batch — processes all videos, outputs to folder/upscaled/
+upscalyvid.py /path/to/folder/ /out/dir/ # batch with custom output directory
 
   -m, --model       realesrgan-x4plus (default) | realesrgan-x4plus-anime |
                     realesrgan-x2plus | realesrnet-x4plus |
@@ -277,19 +287,21 @@ upscalyvid.py [input] [output] [options]
   --outscale        final scale factor (default: model native scale)
   --codec           h264 | h265 | h264_nvenc | hevc_nvenc  (default: h264)
   -q, --quality     CRF (h264/h265) or CQ (nvenc) — 0=lossless, 18=default
-  --tile            tile size px, 0=full frame (default: 0 — safe on 4090 for RRDBNet/SRVGGNet)
+  --tile            tile size px, 0=auto from free VRAM (default: 0)
   --tile-pad        tile overlap padding (default: 10)
   --frame-format    png (default, lossless) | jpg
-  --work-dir PATH   custom temp dir for frames — used by GUI for preview
+  --work-dir PATH   custom temp dir for frames — used by GUI for preview (single-file only)
   --fp32            use FP32 instead of FP16 (HAT always uses FP32 regardless)
   --cpu             force CPU (very slow)
   --keep-frames     retain temp frame dirs after completion
   -v, --verbose     detailed logs: ffmpeg output, per-frame timing, VRAM; also saves
-                    source_frame.png and sample_frame.png to work_dir after frame 1
+                    source_frame.png and sample_frame.png next to source video after frame 1
+  --no-compile      disable torch.compile (faster startup, slower per-frame)
   --list-models     print model table and exit (input/output not required)
 ```
 
-`input` and `output` are `nargs="?"` so `--list-models` and `--help` work without them.
+`input` and `output` are `nargs="?"` so `--list-models` and `--help` work without them.  
+When `input` is a directory, `output` defaults to `{input}/upscaled/`. The model is loaded once and reused for all files in batch mode.
 
 ## Known constraints
 
@@ -317,4 +329,14 @@ upscalyvid.py [input] [output] [options]
 - HAT without tiling on 4K exceeds 24 GB VRAM — `_auto_tile()` handles this automatically, but keep this in mind when reasoning about VRAM.
 - **Model is unloaded from VRAM after upscaling.** In `main()`, after `upscale_frames()` returns, `upsampler.model = None` + `del upsampler` + `torch.cuda.empty_cache()` frees GPU memory before the ffmpeg re-encode step. Do not reference `upsampler` after this point.
 - **`.safetensors` format is intentionally not supported.** Community HAT models are distributed as `.pth` files; `.safetensors` contains identical weights in a different container. Adding safetensors loading would require a new dependency (`safetensors` pip package) with no benefit to output quality or model behavior. If a user has a `.safetensors` file, they should convert it to `.pth` with `safetensors.torch.load_file()` + `torch.save()`.
-- **Verbose mode saves two comparison frames.** `upscale_frames()` saves `source_frame.png` (original resolution, raw extracted frame) and `sample_frame.png` (upscaled result) to `work_dir/` after processing the first frame. Used for quick quality inspection without watching the whole video.
+- **Verbose mode saves two comparison frames next to the source video.** `upscale_frames()` saves `source_frame.png` (original resolution) and `sample_frame.png` (upscaled first frame) to `sample_dir` (= `input_path.parent` when verbose, `None` otherwise). The `sample_dir` parameter was added to `upscale_frames()` for this purpose; when `None` the frames are not saved.
+- **Log file created on every run.** `main()` opens `_TeeLogger` (installs itself as `sys.stdout`) immediately after argument validation, writing `upscalyvid_YYYYMMDD_HHMMSS.log` in the source video's parent directory (or the batch input directory). The tee is closed in the outer `finally` block, so cancellation and crashes are captured too.
+- **Batch mode.** When `input` is a directory, `main()` discovers all `_VIDEO_EXTS` files, builds a `file_pairs` list, downloads the model once, and loops over each file. Each file gets its own temp work dir (inner `try/finally` cleans it). `--work-dir` is ignored in batch mode.
+- **`suggest_tile()` function.** Mirrors `_auto_tile()` logic for a reference 1080p frame using current free VRAM. Called in `main()` for the `[Device]` section tile hint, and imported by `gui.py` for the tile hint label. Returns 0 if full frame fits.
+- **Stale temp cleanup.** `_cleanup_stale_temp()` called at the top of `main()` removes `upscalyvid_*` dirs in `tempfile.gettempdir()` older than 2 hours.
+- **MODELS_DIR env override.** `MODELS_DIR` checks `os.environ.get("UPSCALYVID_MODELS_DIR", ...)` before falling back to `Path(__file__).parent / "models"`. The AppRun script sets this to `~/.local/share/UpscalyVid/models` so model downloads work from the read-only AppImage squashfs mount. Normal (non-AppImage) runs are unaffected.
+- **AppImage.** Built with `build-appimage.sh` using `appimagetool`. Type 2 (squashfs/ELF). Update info embedded: `gh-releases-zsync|Tamalero|UpscalyVid|latest|UpscalyVid-*-x86_64.AppImage.zsync`. AppRun finds system Python with CUDA torch, creates venv in `~/.local/share/UpscalyVid/venv`, installs missing deps. GitHub Actions (`release.yml`) auto-builds on `v*` tag push.
+- **GUI config persistence.** `~/.config/upscalyvid/config.json` stores `last_dir`. Loaded at startup in `MainWindow.__init__` (`self._config`). Written via `_save_config()` whenever a file or folder is selected. Both Browse and Folder… buttons use `config.get("last_dir")` as the QFileDialog start directory.
+- **GUI tile hint label.** `self.tile_hint` QLabel sits next to `tile_spin`. Updated by `_update_tile_hint()` which calls `suggest_tile()` — connected to `model_combo.currentIndexChanged` and `chk_fp32.stateChanged`. `_update_tile_hint()` is called after `opts_box` is built (tile_hint must exist before the method runs).
+- **GUI batch input.** `file_row(allow_dir=True)` adds a "Folder…" QToolButton that opens `QFileDialog.getExistingDirectory`. `_auto_output()` detects `Path(text).is_dir()` and suggests `{dir}/upscaled/`. `_validate()` checks for video files if input is a dir. `_build_cmd()` omits `--work-dir` when input is a directory (preview does not work for batch).
+- **GUI closeEvent cleanup.** `closeEvent` calls `shutil.rmtree(self._work_dir, ignore_errors=True)` before `event.accept()` to remove any leftover temp dirs when the window is closed mid-upscale or after completion.
